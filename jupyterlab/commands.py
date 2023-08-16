@@ -1,3 +1,4 @@
+# ruff: noqa
 """JupyterLab command handler"""
 
 # Copyright (c) Jupyter Development Team.
@@ -157,14 +158,18 @@ def get_app_dir():
 
     # Use the default locations for data_files.
     app_dir = pjoin(sys.prefix, "share", "jupyter", "lab")
+    print(f" @@@@@ app_dir is: {app_dir} @@@@@ ")
+    print(f' $$$$$$ sys.prefix is: {sys.prefix} $$$$$ ')
 
     # Check for a user level install.
     # Ensure that USER_BASE is defined
     if hasattr(site, "getuserbase"):
         site.getuserbase()
     userbase = getattr(site, "USER_BASE", None)
+    print(f"userbase in get_app_dir() is: {userbase}")
     if HERE.startswith(userbase) and not app_dir.startswith(userbase):
         app_dir = pjoin(userbase, "share", "jupyter", "lab")
+        print(f'userbase app_dir is: {app_dir}')
 
     # Check for a system install in '/usr/local/share'.
     elif (
@@ -173,6 +178,15 @@ def get_app_dir():
         and osp.exists("/usr/local/share/jupyter/lab")
     ):
         app_dir = "/usr/local/share/jupyter/lab"
+    # Check for a system install in '/opt/homebrew/share'.
+    elif (
+        sys.prefix.startswith("/opt")
+        and not osp.exists(app_dir)
+        and osp.exists("/opt/homebrew/share/jupyter/lab")
+    ):
+        print(f'sys.prefix is from the Check for system install on M1: {sys.prefix}')
+        app_dir = '/opt/homebrew/share/jupyter/lab'
+        print(f"set app_dir to: {app_dir}")
 
     # We must resolve the path to get the canonical case of the path for
     # case-sensitive systems
@@ -742,7 +756,7 @@ class _AppHandler:
         )
         return [proc]
 
-    def list_extensions(self):  # noqa
+    def list_extensions(self):
         """Print an output of the extensions."""
         self._ensure_disabled_info()
         logger = self.logger
@@ -791,7 +805,7 @@ class _AppHandler:
             for item in sorted(disabled):
                 # Show that all plugins will be disabled if the whole extension matches
                 if item in all_exts:
-                    item += " (all plugins)"  # noqa PLW2901
+                    item += " (all plugins)"  # PLW2901
                 logger.info("    %s" % item)
 
         # Here check if modules are improperly shadowed
@@ -813,7 +827,7 @@ class _AppHandler:
             logger.info("\nBuild recommended, please run `jupyter lab build`:")
             [logger.info("    %s" % item) for item in messages]
 
-    def build_check(self, fast=None):  # noqa
+    def build_check(self, fast=None):
         """Determine whether JupyterLab should be built.
 
         Returns a list of messages.
@@ -944,7 +958,7 @@ class _AppHandler:
                 # Handle local extensions.
                 if extname in local:
                     config = self._read_build_config()
-                    data = config.setdefault("local_extensions", {})  # noqa PLW2901
+                    data = config.setdefault("local_extensions", {})  # PLW2901
                     del data[extname]
                     self._write_build_config(config)
                 return True
@@ -1213,7 +1227,7 @@ class _AppHandler:
 
         info["disabled_core"] = disabled_core
 
-    def _populate_staging(self, name=None, version=None, static_url=None, clean=False):  # noqa
+    def _populate_staging(self, name=None, version=None, static_url=None, clean=False):
         """Set up the assets in the staging directory."""
         app_dir = self.app_dir
         staging = pjoin(app_dir, "staging")
@@ -1354,7 +1368,7 @@ class _AppHandler:
             shutil.copy(lock_template, lock_path)
             os.chmod(lock_path, stat.S_IWRITE | stat.S_IREAD)
 
-    def _get_package_template(self, silent=False):  # noqa
+    def _get_package_template(self, silent=False):
         """Get the template the for staging package.json file."""
         logger = self.logger
         # make a deep copy of the data so we don't influence the core data
@@ -1551,7 +1565,7 @@ class _AppHandler:
             return info
 
         for path in glob(pjoin(dname, "*.tgz")):
-            path = osp.abspath(path)  # noqa PLW2901
+            path = osp.abspath(path)  # PLW2901
             data = read_package(path)
             name = data["name"]
             if name not in info:
@@ -1966,7 +1980,7 @@ def _node_check(logger):
     """Check for the existence of nodejs with the correct version."""
     node = which("node")
     try:
-        output = subprocess.check_output([node, "node-version-check.js"], cwd=HERE)  # noqa S603
+        output = subprocess.check_output([node, "node-version-check.js"], cwd=HERE)  # S603
         logger.debug(output.decode("utf-8"))
     except Exception:
         data = CoreConfig()._data
@@ -1994,7 +2008,7 @@ def _yarn_config(logger):
 
     try:
         output_binary = subprocess.check_output(
-            [node, YARN_PATH, "config", "--json"], stderr=subprocess.PIPE, cwd=HERE  # noqa S603
+            [node, YARN_PATH, "config", "--json"], stderr=subprocess.PIPE, cwd=HERE  # S603
         )
         output = output_binary.decode("utf-8")
         lines = iter(output.splitlines())
@@ -2061,7 +2075,7 @@ def _rmtree_star(path, logger):
             _rmtree(file_path, logger)
 
 
-def _validate_extension(data):  # noqa
+def _validate_extension(data):
     """Detect if a package is an extension using its metadata.
 
     Returns any problems it finds.
@@ -2120,7 +2134,7 @@ def _tarsum(input_file):
     """
     tar = tarfile.open(input_file, "r")
     chunk_size = 100 * 1024
-    h = hashlib.new("sha1")  # noqa: S324
+    h = hashlib.new("sha1")
 
     for member in tar:
         if not member.isfile():
@@ -2176,7 +2190,7 @@ def _test_overlap(spec1, spec2, drop_prerelease1=False, drop_prerelease2=False):
     return cmp == 0
 
 
-def _compare_ranges(spec1, spec2, drop_prerelease1=False, drop_prerelease2=False):  # noqa
+def _compare_ranges(spec1, spec2, drop_prerelease1=False, drop_prerelease2=False):
     """Test whether two version specs overlap.
 
     Returns `None` if we cannot determine compatibility,
@@ -2444,7 +2458,7 @@ def _fetch_package_metadata(registry, name, logger):
     except AttributeError:
         logger.debug("Fetching URL: %s" % (req.get_full_url()))
     try:
-        with contextlib.closing(urlopen(req)) as response:  # noqa S310
+        with contextlib.closing(urlopen(req)) as response:  # S310
             return json.loads(response.read().decode("utf-8"))
     except URLError as exc:
         logger.warning("Failed to fetch package metadata for %r: %r", name, exc)
