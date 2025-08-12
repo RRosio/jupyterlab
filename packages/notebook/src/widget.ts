@@ -666,6 +666,11 @@ export class StaticNotebook extends WindowedList<NotebookViewModel> {
     this.update();
   }
 
+  private _supportsContentVisibility = CSS.supports(
+    'content-visibility',
+    'auto'
+  );
+
   /**
    * Create a cell widget and insert into the notebook.
    */
@@ -685,6 +690,17 @@ export class StaticNotebook extends WindowedList<NotebookViewModel> {
       default:
         widget = this._createRawCell(cell as IRawCellModel);
     }
+    if (
+      this.notebookConfig.windowingMode === 'browser-css' &&
+      this._supportsContentVisibility
+    ) {
+      void widget.ready.then(() => {
+        widget.node.style.contentVisibility = 'auto';
+        // TODO: find a better estimate than this arbitrary value?
+        widget.node.style.containIntrinsicSize = '250px';
+      });
+    }
+
     widget.inViewportChanged.connect(this._onCellInViewportChanged, this);
     widget.addClass(NB_CELL_CLASS);
 
@@ -847,7 +863,11 @@ export class StaticNotebook extends WindowedList<NotebookViewModel> {
   }
 
   private _scheduleCellRenderOnIdle() {
-    if (this.notebookConfig.windowingMode !== 'none' && !this.isDisposed) {
+    if (
+      this.notebookConfig.windowingMode !== 'none' &&
+      this.notebookConfig.windowingMode !== 'browser-css' &&
+      !this.isDisposed
+    ) {
       if (!this._idleCallBack) {
         this._idleCallBack = requestIdleCallback(
           (deadline: IdleDeadline) => {
@@ -925,7 +945,11 @@ export class StaticNotebook extends WindowedList<NotebookViewModel> {
     ) {
       const cell = this.cellsArray[cellIdx];
       if (cell.isPlaceholder()) {
-        if (['defer', 'full'].includes(this.notebookConfig.windowingMode)) {
+        if (
+          ['defer', 'full', 'browser-css'].includes(
+            this.notebookConfig.windowingMode
+          )
+        ) {
           await this._updateForDeferMode(cell, cellIdx);
           if (this.notebookConfig.windowingMode === 'full') {
             // We need to delay slightly the removal to let codemirror properly initialize
@@ -976,6 +1000,22 @@ export class StaticNotebook extends WindowedList<NotebookViewModel> {
    * Apply updated notebook settings.
    */
   private _updateNotebookConfig() {
+    const { windowingMode } = this._notebookConfig;
+    const isBrowserCssMode =
+      windowingMode === 'browser-css' && this._supportsContentVisibility;
+
+    for (const cell of this.cellsArray) {
+      if (!cell.isDisposed && cell.node) {
+        if (isBrowserCssMode) {
+          cell.node.style.contentVisibility = 'auto';
+          cell.node.style.containIntrinsicSize = '250px';
+        } else {
+          cell.node.style.removeProperty('content-visibility');
+          cell.node.style.removeProperty('contain-intrinsic-size');
+        }
+      }
+    }
+
     // Apply scrollPastEnd setting.
     this.toggleClass(
       'jp-mod-scrollPastEnd',
@@ -1238,7 +1278,7 @@ export namespace StaticNotebook {
      * - 'full': Attach to the DOM only cells in viewport
      * - 'none': Attach all cells to the viewport
      */
-    windowingMode: 'defer' | 'full' | 'none';
+    windowingMode: 'defer' | 'full' | 'none' | 'browser-css';
     accessKernelHistory?: boolean;
   }
 

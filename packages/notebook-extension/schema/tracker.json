@@ -832,8 +832,8 @@
     },
     "windowingMode": {
       "title": "Windowing mode",
-      "description": "'defer': Improve loading time - Wait for idle CPU cycles to attach out of viewport cells - 'full': Best performance with side effects - Attach to the DOM only cells in viewport - 'none': Worst performance without side effects - Attach all cells to the viewport",
-      "enum": ["defer", "full", "none"],
+      "description": "'defer': Improve loading time - Wait for idle CPU cycles to attach out of viewport cells - 'browser-css': Improve loading time - Use CSS content visibility to attach out of viewport cells - 'full': Best performance with side effects - Attach to the DOM only cells in viewport - 'none': Worst performance without side effects - Attach all cells to the viewport",
+      "enum": ["defer", "full", "none", "browser-css"],
       "default": "full"
     },
     "accessKernelHistory": {

@@ -1928,6 +1928,7 @@ function activateNotebookHandler(
       windowingMode: settings.get('windowingMode').composite as
         | 'defer'
         | 'full'
+        | 'browser-css'
         | 'none',
       accessKernelHistory: settings.get('accessKernelHistory')
         .composite as boolean
